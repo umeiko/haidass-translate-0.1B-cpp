@@ -91,6 +91,9 @@ float dot_q8_0(const uint8_t* y, const float* x, int64_t n) {
         dot8_i8(vget_low_s8(q0), xb + 0, bs0, bs1);
         dot8_i8(vget_high_s8(q0), xb + 8, bs2, bs3);
         bs0 = vaddq_f32(vaddq_f32(bs0, bs1), vaddq_f32(bs2, bs3));
+        // dot8_i8 accumulates into its outputs — zero before reuse
+        bs1 = vdupq_n_f32(0);
+        bs2 = vdupq_n_f32(0);
         dot8_i8(vget_low_s8(q1), xb + 16, bs1, bs2);
         float32x4_t bs4 = vdupq_n_f32(0), bs5 = vdupq_n_f32(0);
         dot8_i8(vget_high_s8(q1), xb + 24, bs4, bs5);
@@ -118,6 +121,9 @@ float dot_q4_0(const uint8_t* y, const float* x, int64_t n) {
         dot8_i8(vget_low_s8(lo), xb + 0, bs0, bs1);
         dot8_i8(vget_high_s8(lo), xb + 8, bs2, bs3);
         bs0 = vaddq_f32(vaddq_f32(bs0, bs1), vaddq_f32(bs2, bs3));
+        // dot8_i8 accumulates into its outputs — zero before reuse
+        bs1 = vdupq_n_f32(0);
+        bs2 = vdupq_n_f32(0);
         dot8_i8(vget_low_s8(hi), xb + 16, bs1, bs2);
         float32x4_t bs4 = vdupq_n_f32(0), bs5 = vdupq_n_f32(0);
         dot8_i8(vget_high_s8(hi), xb + 24, bs4, bs5);
