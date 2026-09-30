@@ -14,7 +14,9 @@
 namespace haidass {
 
 static HRSRC find_resource() {
-    return FindResourceW(nullptr, MAKEINTRESOURCEW(IDR_GGUF), RT_RCDATA);
+    // RT_RCDATA follows the UNICODE define and may decay to LPSTR; spell out
+    // the W form so this compiles regardless of the project character set.
+    return FindResourceW(nullptr, MAKEINTRESOURCEW(IDR_GGUF), MAKEINTRESOURCEW(10 /*RT_RCDATA*/));
 }
 
 const uint8_t* embedded_model_data() {
