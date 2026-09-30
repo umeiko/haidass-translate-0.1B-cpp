@@ -23,7 +23,7 @@ jobs:
             os: ubuntu-24.04
             gen: Ninja
           - name: macos-x86_64
-            os: macos-13
+            os: macos-15-intel
             gen: Ninja
           - name: macos-arm64
             os: macos-14
@@ -45,7 +45,7 @@ jobs:
             apt: g++-riscv64-linux-gnu
     runs-on: ${{ matrix.os }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install cross toolchain
         if: matrix.apt != ''
@@ -53,7 +53,7 @@ jobs:
 
       - name: Cache model
         id: model-cache
-        uses: actions/cache@v4
+        uses: actions/cache@v6
         with:
           path: model-cache/${{ env.MODEL_FILE }}
           key: q8_0-gguf-v1-${{ env.MODEL_URL }}
@@ -111,6 +111,6 @@ jobs:
           ls -la
 
       - name: Upload release assets
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v3
         with:
           files: dist/*.zip

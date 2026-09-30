@@ -1,5 +1,7 @@
 # haidass-translate-cpp
 
+![haidass-translate-cpp — High-performance C++ translation engine](docs/main.png)
+
 Pure C++17 inference engine for [Haidass-Translate-143M](https://huggingface.co/DALabCommunity/Haidass-Translate-143M) (Chinese ↔ English translation). **Zero third-party C++ dependencies** — standard library + threads only. Two delivery modes:
 
 - **File-loading mode**: load GGUF weights at runtime via `-m model.gguf` (mmap, near-zero copy).
@@ -33,9 +35,13 @@ cmake --build build -j
 ```
 
 Windows MSVC: drop `-G Ninja` to use the default Visual Studio generator, then
-`cmake --build build --config Release`.
+`cmake --build build --config Release`. For a step-by-step local Windows build
+(PowerShell/cmd, uses the CMake+Ninja bundled with VS BuildTools), see
+[docs/BUILD_WINDOWS.md](docs/BUILD_WINDOWS.md).
 
-Minimal fallback without CMake (MinGW/MSYS2): `bash scripts/build_mingw.sh`
+Minimal fallback without CMake (MinGW/MSYS2): `bash scripts/build_mingw.sh`.
+Step-by-step Windows MinGW guide (where to get the compiler, MSYS2 vs winlibs):
+[docs/BUILD_WINDOWS_MINGW.md](docs/BUILD_WINDOWS_MINGW.md).
 
 ### Build (embedded single-file mode)
 

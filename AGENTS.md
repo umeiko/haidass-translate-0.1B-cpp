@@ -15,6 +15,7 @@ export PATH="/c/msys64/mingw64/bin:$PWD/.venv/Scripts:$PATH"
 ```
 
 - **本地只验证 MinGW**；aarch64 / armhf / riscv64 / MSVC / macOS 一律交 CI（`.github/workflows/ci.yml`，交叉目标在 qemu-user 下跑测试）。不要在本机尝试交叉编译验证。
+- 本机逐步编译教程：`docs/BUILD_WINDOWS_MINGW.md`（MinGW，含编译器下载）、`docs/BUILD_WINDOWS.md`（MSVC）。
 - Python 依赖只给工具/测试用：`pip install -r tools/requirements.txt`（venv 在 `.venv/`）。
 - 真模型端到端对照：`PYTHONIOENCODING=utf-8 python tools/verify_vs_hf.py --logits-bin build/hf_logits.bin`，再跑 `build/forward_logits_test.exe <gguf> build/hf_logits.bin`。
 

@@ -1,5 +1,7 @@
 # haidass-translate-cpp
 
+![haidass-translate-cpp — High-performance C++ translation engine](docs/main.png)
+
 纯 C++17 实现的 [Haidass-Translate-143M](https://huggingface.co/DALabCommunity/Haidass-Translate-143M) 中英互译推理引擎。**零第三方 C++ 依赖**（仅标准库 + 线程），支持两种交付模式：
 
 - **文件加载模式**：运行时通过 `-m model.gguf` 加载 GGUF 权重（mmap，几乎零内存拷贝）。
@@ -33,9 +35,13 @@ cmake --build build -j
 ```
 
 Windows MSVC：去掉 `-G Ninja` 用默认 Visual Studio 生成器，然后
-`cmake --build build --config Release`。
+`cmake --build build --config Release`。Windows 本机逐步编译教程
+（PowerShell/cmd 两种写法，用 VS BuildTools 自带的 CMake+Ninja，零额外安装）见
+[docs/BUILD_WINDOWS.md](docs/BUILD_WINDOWS.md)。
 
-MinGW/MSYS2 无 CMake 的极简回退：`bash scripts/build_mingw.sh`
+MinGW/MSYS2 无 CMake 的极简回退：`bash scripts/build_mingw.sh`。
+Windows MinGW 逐步教程（编译器去哪下、MSYS2 与 winlibs 二选一）见
+[docs/BUILD_WINDOWS_MINGW.md](docs/BUILD_WINDOWS_MINGW.md)。
 
 ### 构建（内嵌单文件模式）
 
