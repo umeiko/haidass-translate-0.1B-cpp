@@ -9,6 +9,8 @@
 
 [English](README.md)
 
+![alt text](docs/showcase.png)
+
 ## 特性
 
 - Qwen3 架构（30 层 / hidden 576 / GQA 9Q-3KV / QK-Norm / RoPE），全 F32 计算（官方报告 fp16 激活会溢出）

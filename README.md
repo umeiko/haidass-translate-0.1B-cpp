@@ -2,12 +2,14 @@
 
 ![haidass-translate-cpp — High-performance C++ translation engine](docs/main.png)
 
-Pure C++17 inference engine for [Haidass-Translate-143M](https://huggingface.co/DALabCommunity/Haidass-Translate-143M) (Chinese ↔ English translation). **Zero third-party C++ dependencies** — standard library + threads only. Two delivery modes:
+Pure C++17 inference engine for [Haidass-Translate-143M](https://huggingface.co/DALabCommunity/Haidass-Translate-143M)
 
 - **File-loading mode**: load GGUF weights at runtime via `-m model.gguf` (mmap, near-zero copy).
 - **Embedded single-file mode**: weights are linked into the binary at build time, producing one **fully self-contained executable** with no external files.
 
 [中文文档](README_CN.md)
+
+![alt text](docs/showcase.png)
 
 ## Features
 
