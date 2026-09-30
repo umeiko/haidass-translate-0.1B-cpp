@@ -79,10 +79,14 @@ if(HAIDASS_EMBED_MODEL)
     endif()
 
     if(MSVC)
-        # Windows resource embedding (compiler-independent format)
+        # Windows resource embedding (compiler-independent format).
+        # The .rc must be compiled into the EXECUTABLE, not the static lib:
+        # the linker drops unreferenced library objects, and nothing references
+        # the resource blob — FindResourceW would fail at runtime.
         file(TO_CMAKE_PATH "${HAIDASS_EMBED_MODEL_ABS}" HAIDASS_EMBED_MODEL_RC)
         configure_file(cmake/embed_gguf.rc.in ${CMAKE_BINARY_DIR}/embed_gguf.rc @ONLY)
-        target_sources(haidass_core PRIVATE ${CMAKE_BINARY_DIR}/embed_gguf.rc src/embed_res.cpp)
+        set(HAIDASS_EMBED_RC ${CMAKE_BINARY_DIR}/embed_gguf.rc)
+        target_sources(haidass_core PRIVATE src/embed_res.cpp)
     else()
         # GNU as .incbin works for ELF (Linux, MinGW) and Mach-O (macOS/clang)
         enable_language(ASM)
@@ -101,6 +105,10 @@ endif()
 # ---------------------------------------------------------------------------
 if(HAIDASS_BUILD_CLI)
     add_executable(haidass src/main.cpp)
+    if(HAIDASS_EMBED_RC)
+        # resource blob lives directly in the exe (see note above)
+        target_sources(haidass PRIVATE ${HAIDASS_EMBED_RC})
+    endif()
     target_link_libraries(haidass PRIVATE haidass_core)
     if(MSVC)
         target_compile_options(haidass PRIVATE /utf-8)
