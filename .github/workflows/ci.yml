@@ -1,0 +1,156 @@
+name: CI
+
+on:
+  push:
+    branches: [main, master]
+  pull_request:
+
+jobs:
+  linux-x86_64:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy
+      - run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - run: cmake --build build -j
+      - run: ctest --test-dir build --output-on-failure
+
+  windows-msvc:
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        arch: [x64, Win32]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy
+      - run: cmake -S . -B build -A ${{ matrix.arch }}
+      - run: cmake --build build --config Release -j
+      - run: ctest --test-dir build -C Release --output-on-failure
+
+  windows-mingw:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy
+      - run: sudo apt-get update && sudo apt-get install -y g++-mingw-w64-x86-64
+      - run: >
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/x86_64-w64-mingw32.cmake
+      - run: cmake --build build -j
+      # Windows binaries can't run on Linux without wine; build-only validation
+      # (MinGW on Windows is covered by local development).
+
+  macos-x86_64:
+    runs-on: macos-13
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy
+      - run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - run: cmake --build build -j
+      - run: ctest --test-dir build --output-on-failure
+
+  macos-arm64:
+    runs-on: macos-14
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy
+      - run: cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+      - run: cmake --build build -j
+      - run: ctest --test-dir build --output-on-failure
+
+  linux-aarch64:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy
+      - run: sudo apt-get update && sudo apt-get install -y g++-aarch64-linux-gnu qemu-user-static
+      - run: >
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/aarch64-linux-gnu.cmake
+          -DCMAKE_CROSSCOMPILING_EMULATOR=qemu-aarch64-static
+      - run: cmake --build build -j
+      - run: ctest --test-dir build --output-on-failure
+
+  linux-armhf:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy
+      - run: sudo apt-get update && sudo apt-get install -y g++-arm-linux-gnueabihf qemu-user-static
+      - run: >
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/arm-linux-gnueabihf.cmake
+          -DCMAKE_CROSSCOMPILING_EMULATOR=qemu-arm-static
+      - run: cmake --build build -j
+      - run: ctest --test-dir build --output-on-failure
+
+  linux-riscv64:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy
+      - run: sudo apt-get update && sudo apt-get install -y g++-riscv64-linux-gnu qemu-user-static
+      - run: >
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          -DCMAKE_TOOLCHAIN_FILE=cmake/toolchains/riscv64-linux-gnu.cmake
+          -DCMAKE_CROSSCOMPILING_EMULATOR=qemu-riscv64-static
+      - run: cmake --build build -j
+      - run: ctest --test-dir build --output-on-failure
+
+  embed-smoke-linux:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy
+      - run: python tools/make_fixture.py --vocab tests/data/vocab.bin --out build-fixture/fixture.gguf
+      - run: >
+          cmake -S . -B build -G Ninja -DCMAKE_BUILD_TYPE=Release
+          -DHAIDASS_BUILD_TESTS=OFF
+          -DHAIDASS_EMBED_MODEL=$PWD/build-fixture/fixture.gguf
+      - run: cmake --build build -j
+      # embedded build must run with no -m and no model file present
+      - run: ./build/haidass --embed-info && ./build/haidass -n 8 "Hello world"
+
+  embed-smoke-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - run: pip install numpy
+      - run: python tools/make_fixture.py --vocab tests/data/vocab.bin --out build-fixture/fixture.gguf
+      - run: >
+          cmake -S . -B build
+          -DHAIDASS_BUILD_TESTS=OFF
+          -DHAIDASS_EMBED_MODEL="$env:GITHUB_WORKSPACE/build-fixture/fixture.gguf"
+      - run: cmake --build build --config Release -j
+      # embedded build must run with no -m and no model file present
+      - run: ./build/Release/haidass.exe --embed-info; ./build/Release/haidass.exe -n 8 "Hello world"

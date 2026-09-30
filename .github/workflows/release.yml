@@ -1,0 +1,116 @@
+name: Release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: write
+
+env:
+  MODEL_URL: https://huggingface.co/umeiko/Haidass-Translate-143M-GGUF/resolve/main/haidass-translate-143m-q8_0.gguf
+  MODEL_FILE: haidass-translate-143m-q8_0.gguf
+
+jobs:
+  build:
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - name: windows-x86_64
+            os: windows-latest
+          - name: linux-x86_64
+            os: ubuntu-24.04
+            gen: Ninja
+          - name: macos-x86_64
+            os: macos-13
+            gen: Ninja
+          - name: macos-arm64
+            os: macos-14
+            gen: Ninja
+          - name: linux-aarch64
+            os: ubuntu-24.04
+            gen: Ninja
+            toolchain: cmake/toolchains/aarch64-linux-gnu.cmake
+            apt: g++-aarch64-linux-gnu
+          - name: linux-armhf
+            os: ubuntu-24.04
+            gen: Ninja
+            toolchain: cmake/toolchains/arm-linux-gnueabihf.cmake
+            apt: g++-arm-linux-gnueabihf
+          - name: linux-riscv64
+            os: ubuntu-24.04
+            gen: Ninja
+            toolchain: cmake/toolchains/riscv64-linux-gnu.cmake
+            apt: g++-riscv64-linux-gnu
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install cross toolchain
+        if: matrix.apt != ''
+        run: sudo apt-get update && sudo apt-get install -y ${{ matrix.apt }}
+
+      - name: Cache model
+        id: model-cache
+        uses: actions/cache@v4
+        with:
+          path: model-cache/${{ env.MODEL_FILE }}
+          key: q8_0-gguf-v1-${{ env.MODEL_URL }}
+
+      - name: Download model
+        if: steps.model-cache.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          mkdir -p model-cache
+          curl -fL --retry 3 --retry-delay 5 -o "model-cache/$MODEL_FILE" "$MODEL_URL"
+
+      - name: Build (file-loading mode)
+        shell: bash
+        run: |
+          set -e
+          CFG=(-DCMAKE_BUILD_TYPE=Release -DHAIDASS_BUILD_TESTS=OFF)
+          [ -n "$GEN" ]       && CFG+=(-G "$GEN")
+          [ -n "$TOOLCHAIN" ] && CFG+=(-DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN")
+          cmake -S . -B build-file "${CFG[@]}"
+          cmake --build build-file --config Release -j
+        env:
+          GEN: ${{ matrix.gen }}
+          TOOLCHAIN: ${{ matrix.toolchain }}
+
+      - name: Build (embedded Q8_0 single-file mode)
+        shell: bash
+        run: |
+          set -e
+          CFG=(-DCMAKE_BUILD_TYPE=Release -DHAIDASS_BUILD_TESTS=OFF
+               -DHAIDASS_EMBED_MODEL="$GITHUB_WORKSPACE/model-cache/$MODEL_FILE")
+          [ -n "$GEN" ]       && CFG+=(-G "$GEN")
+          [ -n "$TOOLCHAIN" ] && CFG+=(-DCMAKE_TOOLCHAIN_FILE="$TOOLCHAIN")
+          cmake -S . -B build-embed "${CFG[@]}"
+          cmake --build build-embed --config Release -j
+        env:
+          GEN: ${{ matrix.gen }}
+          TOOLCHAIN: ${{ matrix.toolchain }}
+
+      - name: Package
+        shell: bash
+        run: |
+          set -e
+          mkdir -p dist && cd dist
+          BIN=haidass
+          case "${{ matrix.name }}" in windows*) BIN=haidass.exe ;; esac
+          # multi-config generators (MSVC) put binaries under Release/
+          FILE_BIN="../build-file/$BIN";   [ -f "$FILE_BIN" ]   || FILE_BIN="../build-file/Release/$BIN"
+          EMBED_BIN="../build-embed/$BIN"; [ -f "$EMBED_BIN" ] || EMBED_BIN="../build-embed/Release/$BIN"
+          cp "$FILE_BIN" $BIN
+          cmake -E tar cf "haidass-${{ matrix.name }}-file.zip" --format=zip -- $BIN
+          rm $BIN
+          cp "$EMBED_BIN" $BIN
+          cmake -E tar cf "haidass-${{ matrix.name }}-embedded-q8_0.zip" --format=zip -- $BIN
+          rm $BIN
+          ls -la
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: dist/*.zip

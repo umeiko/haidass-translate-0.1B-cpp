@@ -1,0 +1,5 @@
+numpy
+sentencepiece   # optional: cross-check tokenizer against native SentencePiece
+# build tooling (Windows dev machines without system cmake/ninja):
+# cmake
+# ninja

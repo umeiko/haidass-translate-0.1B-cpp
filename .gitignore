@@ -1,0 +1,19 @@
+# Local build artifacts
+build/
+build-*/
+out*/
+.venv/
+__pycache__/
+
+# Model files (download via tools/download_model.py)
+models/
+
+# Large generated test fixtures (regenerated at test time)
+tests/data/fixture.gguf
+tests/data/logits_ref.bin
+tests/data/tokenizer_vectors.txt
+
+# Editor
+.vscode/
+.idea/
+*.swp
